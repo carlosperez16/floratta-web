@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout · Floratta Bake Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --verde: #2d4a3e; --verde-claro: #3d6b5a; --sage: #c8c9a8;
+            --crema: #f5f2ec; --blanco: #fdfcf9; --texto: #2a2a2a; --texto-suave: #6b7c75;
+        }
+        body { font-family: 'Jost', sans-serif; background-color: var(--crema); color: var(--texto); min-height: 100vh; }
+
+        header { background-color: var(--verde); padding: 0 60px; height: 72px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { text-decoration: none; display: flex; flex-direction: column; }
+        .logo-nombre { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--sage); letter-spacing: 4px; text-transform: uppercase; line-height: 1; }
+        .logo-sub { font-size: 0.65rem; color: rgba(200,201,168,0.5); letter-spacing: 3px; text-transform: uppercase; font-family: 'Cormorant Garamond', serif; }
+        .header-paso { font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(200,201,168,0.6); }
+
+        .pasos-bar { background: var(--blanco); border-bottom: 1px solid rgba(45,74,62,0.1); padding: 20px 60px; display: flex; align-items: center; gap: 0; }
+        .paso { display: flex; align-items: center; gap: 10px; }
+        .paso-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 500; }
+        .paso.activo .paso-num { background: var(--verde); color: var(--sage); }
+        .paso.inactivo .paso-num { background: rgba(45,74,62,0.1); color: var(--texto-suave); }
+        .paso.completo .paso-num { background: var(--sage); color: var(--verde); }
+        .paso-label { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; }
+        .paso.activo .paso-label { color: var(--verde); font-weight: 500; }
+        .paso.inactivo .paso-label { color: var(--texto-suave); }
+        .paso-linea { flex: 1; height: 1px; background: rgba(45,74,62,0.15); margin: 0 20px; }
+
+        .checkout-layout { display: grid; grid-template-columns: 1fr 420px; gap: 32px; max-width: 1200px; margin: 40px auto; padding: 0 40px 80px; }
+
+        .seccion { background: var(--blanco); border: 1px solid rgba(45,74,62,0.08); margin-bottom: 20px; }
+        .seccion-header { padding: 20px 28px; border-bottom: 1px solid rgba(45,74,62,0.08); display: flex; align-items: center; gap: 12px; }
+        .seccion-num { width: 24px; height: 24px; border-radius: 50%; background: var(--verde); color: var(--sage); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 500; flex-shrink: 0; }
+        .seccion-titulo { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--verde); font-weight: 600; }
+        .seccion-body { padding: 28px; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .campo { display: flex; flex-direction: column; gap: 6px; }
+        .campo.full { grid-column: 1 / -1; }
+        .campo label { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: var(--verde); font-weight: 500; }
+        .campo input, .campo select, .campo textarea {
+            padding: 11px 0; border: none; border-bottom: 1px solid rgba(45,74,62,0.2);
+            background: transparent; font-size: 0.9rem; font-family: 'Jost', sans-serif;
+            color: var(--texto); outline: none; transition: border-color 0.3s;
+        }
+        .campo input:focus, .campo select:focus, .campo textarea:focus { border-bottom-color: var(--verde); }
+        .campo textarea { resize: vertical; min-height: 70px; }
+
+        .check-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; cursor: pointer; }
+        .check-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--verde); cursor: pointer; }
+        .check-row span { font-size: 0.82rem; color: var(--texto-suave); }
+
+        .metodos-pago { display: flex; flex-direction: column; gap: 12px; }
+        .metodo-card {
+            border: 1px solid rgba(45,74,62,0.15); padding: 16px 20px;
+            cursor: pointer; transition: all 0.3s; display: flex; align-items: center; gap: 14px;
+        }
+        .metodo-card:hover { border-color: var(--verde); }
+        .metodo-card.seleccionado { border-color: var(--verde); background: rgba(45,74,62,0.03); }
+        .metodo-radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid rgba(45,74,62,0.3); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s; }
+        .metodo-card.seleccionado .metodo-radio { border-color: var(--verde); }
+        .metodo-radio-inner { width: 8px; height: 8px; border-radius: 50%; background: var(--verde); display: none; }
+        .metodo-card.seleccionado .metodo-radio-inner { display: block; }
+        .metodo-info { flex: 1; }
+        .metodo-nombre { font-size: 0.88rem; font-weight: 500; color: var(--verde); margin-bottom: 2px; }
+        .metodo-desc { font-size: 0.75rem; color: var(--texto-suave); }
+        .metodo-icono { font-size: 1.4rem; }
+
+        .transferencia-detalle {
+            background: var(--crema); border-left: 3px solid var(--sage);
+            padding: 14px 16px; margin-top: 12px; display: none;
+            font-size: 0.82rem; color: var(--texto-suave); line-height: 1.8;
+        }
+        .transferencia-detalle.visible { display: block; }
+        .transferencia-detalle strong { color: var(--verde); }
+
+        .resumen-sticky { position: sticky; top: 24px; }
+        .resumen-box { background: var(--blanco); border: 1px solid rgba(45,74,62,0.08); }
+        .resumen-header { padding: 20px 24px; border-bottom: 1px solid rgba(45,74,62,0.08); }
+        .resumen-titulo { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--verde); font-weight: 600; }
+        .resumen-items { padding: 0 24px; max-height: 320px; overflow-y: auto; }
+        .resumen-item { display: flex; gap: 12px; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid rgba(45,74,62,0.06); }
+        .resumen-item:last-child { border-bottom: none; }
+        .resumen-item-img { width: 52px; height: 52px; object-fit: cover; border-radius: 2px; background: var(--crema); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; overflow: hidden; }
+        .resumen-item-img img { width: 100%; height: 100%; object-fit: cover; }
+        .resumen-item-info { flex: 1; }
+        .resumen-item-nombre { font-size: 0.85rem; font-weight: 500; color: var(--verde); margin-bottom: 2px; }
+        .resumen-item-tipo { font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 4px; }
+        .resumen-item-cant { font-size: 0.78rem; color: var(--texto-suave); }
+        .resumen-item-precio { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--verde); font-weight: 600; white-space: nowrap; }
+        .resumen-totales { padding: 16px 24px; border-top: 1px solid rgba(45,74,62,0.08); }
+        .total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; color: var(--texto-suave); }
+        .total-row.principal { font-size: 1rem; font-weight: 500; color: var(--verde); margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(45,74,62,0.1); margin-bottom: 0; }
+        .total-row.principal span:last-child { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; }
+
+        .btn-confirmar {
+            width: 100%; padding: 16px; background-color: var(--verde); color: var(--sage);
+            border: none; font-family: 'Jost', sans-serif; font-size: 0.8rem;
+            letter-spacing: 3px; text-transform: uppercase; cursor: pointer;
+            transition: background-color 0.3s; margin-top: 16px;
+        }
+        .btn-confirmar:hover { background-color: var(--verde-claro); color: white; }
+        .btn-confirmar:disabled { background-color: rgba(45,74,62,0.3); cursor: not-allowed; }
+
+        .error-checkout { font-size: 0.8rem; color: #c0392b; padding: 10px 12px; background: #fdedec; border-left: 3px solid #c0392b; margin-top: 12px; display: none; }
+        .error-checkout.visible { display: block; }
+
+        .carrito-vacio { text-align: center; padding: 60px 40px; color: var(--texto-suave); }
+        .carrito-vacio a { color: var(--verde); text-decoration: none; border-bottom: 1px solid var(--sage); }
+
+        .volver-link { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; color: var(--texto-suave); text-decoration: none; margin-bottom: 24px; transition: color 0.3s; }
+        .volver-link:hover { color: var(--verde); }
+
+        .seguridad-row { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.72rem; color: var(--texto-suave); margin-top: 12px; letter-spacing: 0.5px; }
+
+        @media (max-width: 900px) {
+            .checkout-layout { grid-template-columns: 1fr; }
+            .resumen-sticky { position: static; }
+            header { padding: 0 20px; }
+            .pasos-bar { padding: 16px 20px; }
+            .checkout-layout { padding: 0 20px 60px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo">
+        <span class="logo-nombre">Floratta</span>
+        <span class="logo-sub">Bake Studio</span>
+    </a>
+    <span class="header-paso">Paso 1 de 2 — Checkout</span>
+</header>
+
+<div class="pasos-bar">
+    <div class="paso activo">
+        <div class="paso-num">1</div>
+        <div class="paso-label">Datos y pago</div>
+    </div>
+    <div class="paso-linea"></div>
+    <div class="paso inactivo">
+        <div class="paso-num">2</div>
+        <div class="paso-label">Confirmacion y factura</div>
+    </div>
+</div>
+
+<div class="checkout-layout">
+
+    <div>
+        <a href="/catalogo" class="volver-link">← Volver al catalogo</a>
+
+        <div class="seccion">
+            <div class="seccion-header">
+                <div class="seccion-num">1</div>
+                <div class="seccion-titulo">Datos personales</div>
+            </div>
+            <div class="seccion-body">
+                <div class="form-grid">
+                    <div class="campo">
+                        <label>Nombre completo *</label>
+                        <input type="text" id="co-nombre" placeholder="Tu nombre completo">
+                    </div>
+                    <div class="campo">
+                        <label>Telefono *</label>
+                        <input type="tel" id="co-telefono" placeholder="Ej: 3194122610">
+                    </div>
+                    <div class="campo full">
+                        <label>Correo electronico *</label>
+                        <input type="email" id="co-correo" placeholder="tu@correo.com">
+                    </div>
+                    <div class="campo full">
+                        <label>Numero de identificacion (para factura)</label>
+                        <input type="text" id="co-documento" placeholder="CC, NIT, etc.">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <div class="seccion-header">
+                <div class="seccion-num">2</div>
+                <div class="seccion-titulo">Direccion de envio</div>
+            </div>
+            <div class="seccion-body">
+                <div class="form-grid">
+                    <div class="campo full">
+                        <label>Direccion *</label>
+                        <input type="text" id="co-direccion" placeholder="Calle, numero, barrio">
+                    </div>
+                    <div class="campo">
+                        <label>Ciudad *</label>
+                        <input type="text" id="co-ciudad" placeholder="Medellin">
+                    </div>
+                    <div class="campo">
+                        <label>Departamento</label>
+                        <input type="text" id="co-departamento" placeholder="Antioquia">
+                    </div>
+                    <div class="campo full">
+                        <label>Notas adicionales</label>
+                        <textarea id="co-notas" placeholder="Indicaciones especiales, apartamento, referencias..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <div class="seccion-header">
+                <div class="seccion-num">3</div>
+                <div class="seccion-titulo">Direccion de facturacion</div>
+            </div>
+            <div class="seccion-body">
+                <label class="check-row">
+                    <input type="checkbox" id="misma-direccion" checked onchange="toggleDireccionFact()">
+                    <span>Misma que la direccion de envio</span>
+                </label>
+                <div id="direccion-facturacion" style="display:none;">
+                    <div class="form-grid">
+                        <div class="campo full">
+                            <label>Direccion de facturacion *</label>
+                            <input type="text" id="co-dir-fact" placeholder="Calle, numero, barrio">
+                        </div>
+                        <div class="campo">
+                            <label>Ciudad</label>
+                            <input type="text" id="co-ciudad-fact" placeholder="Medellin">
+                        </div>
+                        <div class="campo">
+                            <label>Departamento</label>
+                            <input type="text" id="co-dep-fact" placeholder="Antioquia">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="seccion">
+            <div class="seccion-header">
+                <div class="seccion-num">4</div>
+                <div class="seccion-titulo">Metodo de pago</div>
+            </div>
+            <div class="seccion-body">
+                <div class="metodos-pago">
+                    <div class="metodo-card seleccionado" onclick="seleccionarMetodo('efectivo', this)">
+                        <div class="metodo-radio"><div class="metodo-radio-inner"></div></div>
+                        <div class="metodo-info">
+                            <div class="metodo-nombre">Pago en efectivo</div>
+                            <div class="metodo-desc">Paga al momento de recibir tu pedido</div>
+                        </div>
+                        <div class="metodo-icono">💵</div>
+                    </div>
+                    <div class="metodo-card" onclick="seleccionarMetodo('transferencia', this)">
+                        <div class="metodo-radio"><div class="metodo-radio-inner"></div></div>
+                        <div class="metodo-info">
+                            <div class="metodo-nombre">Transferencia bancaria</div>
+                            <div class="metodo-desc">Nequi, Daviplata o transferencia bancaria</div>
+                        </div>
+                        <div class="metodo-icono">🏦</div>
+                    </div>
+                    <div class="transferencia-detalle" id="detalle-transferencia">
+                        <strong>Datos para transferencia:</strong><br>
+                        Nequi / Daviplata: <strong>3194122610</strong><br>
+                        Banco: <strong>Bancolombia</strong><br>
+                        Cuenta ahorros: <strong>123-456789-00</strong><br>
+                        A nombre de: <strong>Floratta Bake Studio</strong><br><br>
+                        Despues de transferir, envia el comprobante por WhatsApp.
+                    </div>
+                    <div class="metodo-card" onclick="seleccionarMetodo('tarjeta', this)">
+                        <div class="metodo-radio"><div class="metodo-radio-inner"></div></div>
+                        <div class="metodo-info">
+                            <div class="metodo-nombre">Tarjeta de credito / debito</div>
+                            <div class="metodo-desc">Proximamente disponible via MercadoPago</div>
+                        </div>
+                        <div class="metodo-icono">💳</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="resumen-sticky">
+        <div class="resumen-box">
+            <div class="resumen-header">
+                <div class="resumen-titulo">Resumen del pedido</div>
+            </div>
+            <div class="resumen-items" id="resumen-items">
+                <div style="padding:40px;text-align:center;color:var(--texto-suave);">Cargando carrito...</div>
+            </div>
+            <div class="resumen-totales">
+                <div class="total-row"><span>Subtotal</span><span id="resumen-subtotal">$0</span></div>
+                <div class="total-row"><span>Envio</span><span>A coordinar</span></div>
+                <div class="total-row principal"><span>Total</span><span id="resumen-total">$0</span></div>
+            </div>
+            <div style="padding: 0 24px 24px;">
+                <div class="error-checkout" id="error-checkout"></div>
+                <button class="btn-confirmar" id="btn-confirmar" onclick="confirmarPedido()">
+                    Confirmar y continuar
+                </button>
+                <div class="seguridad-row">
+                    🔒 Compra segura · Floratta Bake Studio
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script th:inline="none">
+/*<![CDATA[*/
+var CARRITO_KEY = 'floratta_carrito';
+var metodoPagoSeleccionado = 'efectivo';
+
+function obtenerCarrito() {
+    try { return JSON.parse(localStorage.getItem(CARRITO_KEY)) || []; }
+    catch(e) { return []; }
+}
+
+function formatCOP(v) {
+    return '$' + new Intl.NumberFormat('es-CO').format(v || 0);
+}
+
+var token = localStorage.getItem('token');
+if (!token) { window.location.href = '/login'; }
+
+var correoGuardado = localStorage.getItem('correoUsuario');
+if (correoGuardado) { document.getElementById('co-correo').value = correoGuardado; }
+
+function toggleDireccionFact() {
+    var checked = document.getElementById('misma-direccion').checked;
+    document.getElementById('direccion-facturacion').style.display = checked ? 'none' : 'block';
+}
+
+function seleccionarMetodo(metodo, el) {
+    document.querySelectorAll('.metodo-card').forEach(function(c) { c.classList.remove('seleccionado'); });
+    el.classList.add('seleccionado');
+    metodoPagoSeleccionado = metodo;
+    var det = document.getElementById('detalle-transferencia');
+    det.classList.toggle('visible', metodo === 'transferencia');
+}
+
+function renderizarResumen() {
+    var carrito = obtenerCarrito();
+    var container = document.getElementById('resumen-items');
+
+    if (carrito.length === 0) {
+        container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--texto-suave);">El carrito esta vacio. <a href="/catalogo" style="color:var(--verde);">Ver productos</a></div>';
+        document.getElementById('resumen-subtotal').textContent = '$0';
+        document.getElementById('resumen-total').textContent = '$0';
+        document.getElementById('btn-confirmar').disabled = true;
+        return;
+    }
+
+    var html = '';
+    var subtotal = 0;
+    carrito.forEach(function(item) {
+        var itemTotal = parseFloat(item.precio) * (item.cantidad || 1);
+        subtotal += itemTotal;
+        var imgHtml = item.imagen
+            ? '<img src="' + item.imagen + '" alt="' + item.nombre + '">'
+            : (item.tipo === 'CURSO' ? '🎓' : '🎂');
+        html += '<div class="resumen-item">';
+        html += '<div class="resumen-item-img">' + imgHtml + '</div>';
+        html += '<div class="resumen-item-info">';
+        html += '<div class="resumen-item-nombre">' + item.nombre + '</div>';
+        html += '<div class="resumen-item-tipo">' + (item.tipo === 'CURSO' ? 'Curso' : (item.categoria || 'Producto')) + '</div>';
+        if (item.tipo === 'PRODUCTO') {
+            html += '<div class="resumen-item-cant">Cantidad: ' + (item.cantidad || 1) + '</div>';
+        }
+        html += '</div>';
+        html += '<div class="resumen-item-precio">' + formatCOP(itemTotal) + '</div>';
+        html += '</div>';
+    });
+
+    container.innerHTML = html;
+    document.getElementById('resumen-subtotal').textContent = formatCOP(subtotal);
+    document.getElementById('resumen-total').textContent = formatCOP(subtotal);
+}
+
+async function confirmarPedido() {
+    var nombre     = document.getElementById('co-nombre').value.trim();
+    var telefono   = document.getElementById('co-telefono').value.trim();
+    var correo     = document.getElementById('co-correo').value.trim();
+    var documento  = document.getElementById('co-documento').value.trim();
+    var direccion  = document.getElementById('co-direccion').value.trim();
+    var ciudad     = document.getElementById('co-ciudad').value.trim();
+    var notas      = document.getElementById('co-notas').value.trim();
+    var errorEl    = document.getElementById('error-checkout');
+    var btnEl      = document.getElementById('btn-confirmar');
+
+    errorEl.classList.remove('visible');
+
+    if (!nombre || !telefono || !correo || !direccion || !ciudad) {
+        errorEl.textContent = 'Por favor completa todos los campos obligatorios (*).';
+        errorEl.classList.add('visible');
+        return;
+    }
+
+    var carrito = obtenerCarrito();
+    if (carrito.length === 0) {
+        errorEl.textContent = 'El carrito esta vacio.';
+        errorEl.classList.add('visible');
+        return;
+    }
+
+    var items = carrito.map(function(i) {
+        return {
+            productoId: i.tipo === 'PRODUCTO' ? i.id : null,
+            cursoId:    i.tipo === 'CURSO'    ? i.id : null,
+            cantidad:   i.cantidad || 1
+        };
+    });
+
+    var subtotal = carrito.reduce(function(s, i) { return s + parseFloat(i.precio) * (i.cantidad || 1); }, 0);
+
+    var misma = document.getElementById('misma-direccion').checked;
+    var dirFact = misma ? direccion + ', ' + ciudad : (document.getElementById('co-dir-fact').value.trim() + ', ' + document.getElementById('co-ciudad-fact').value.trim());
+
+    btnEl.textContent = 'Procesando...';
+    btnEl.disabled = true;
+
+    try {
+        var res = await fetch('/api/pedidos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({
+                nombreCliente: nombre,
+                telefono: telefono,
+                direccion: direccion + ', ' + ciudad,
+                notas: notas,
+                items: items
+            })
+        });
+
+        var data = await res.json();
+
+        if (res.ok) {
+            var datosFactura = {
+                pedidoId:    data.id,
+                nombre:      nombre,
+                telefono:    telefono,
+                correo:      correo,
+                documento:   documento,
+                direccion:   direccion + ', ' + ciudad,
+                dirFact:     dirFact,
+                notas:       notas,
+                metodoPago:  metodoPagoSeleccionado,
+                items:       carrito,
+                subtotal:    subtotal,
+                total:       data.total || subtotal,
+                fecha:       new Date().toISOString()
+            };
+            localStorage.setItem('floratta_factura', JSON.stringify(datosFactura));
+            localStorage.removeItem(CARRITO_KEY);
+            window.location.href = '/pago';
+        } else {
+            errorEl.textContent = data.error || 'Error al procesar el pedido.';
+            errorEl.classList.add('visible');
+            btnEl.textContent = 'Confirmar y continuar';
+            btnEl.disabled = false;
+        }
+    } catch(e) {
+        errorEl.textContent = 'Error de conexion. Intenta de nuevo.';
+        errorEl.classList.add('visible');
+        btnEl.textContent = 'Confirmar y continuar';
+        btnEl.disabled = false;
+    }
+}
+
+renderizarResumen();
+/*]]>*/
+</script>
+
+</body>
+</html>

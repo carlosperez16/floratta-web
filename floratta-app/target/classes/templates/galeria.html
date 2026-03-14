@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería · Floratta Bake Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --verde: #2d4a3e;
+            --verde-claro: #3d6b5a;
+            --sage: #c8c9a8;
+            --crema: #f5f2ec;
+            --blanco: #fdfcf9;
+            --texto: #2a2a2a;
+            --texto-suave: #6b7c75;
+        }
+
+        body {
+            font-family: 'Jost', sans-serif;
+            background-color: var(--blanco);
+            color: var(--texto);
+        }
+
+        header {
+            background-color: var(--blanco);
+            border-bottom: 1px solid rgba(45,74,62,0.12);
+            padding: 0 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 80px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            text-decoration: none;
+        }
+
+        .logo-nombre {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: var(--verde);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        .logo-sub {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.75rem;
+            color: var(--sage);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-sep { color: var(--sage); font-size: 0.8rem; }
+        .nav-item { position: relative; }
+
+        .nav-link {
+            color: var(--verde);
+            text-decoration: none;
+            font-size: 0.82rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-weight: 500;
+            padding: 8px 12px;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-link:hover { color: var(--verde-claro); }
+        .nav-link.activo { color: var(--verde); border-bottom: 2px solid var(--sage); }
+        .nav-link .flecha { font-size: 0.6rem; transition: transform 0.3s; }
+        .nav-item:hover .flecha { transform: rotate(180deg); }
+
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--blanco);
+            border: 1px solid rgba(45,74,62,0.12);
+            border-top: 2px solid var(--verde);
+            min-width: 220px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-8px);
+            transition: all 0.3s;
+            z-index: 200;
+        }
+
+        .nav-item:hover .dropdown {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown a {
+            display: block;
+            padding: 12px 20px;
+            color: var(--texto);
+            text-decoration: none;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(45,74,62,0.06);
+        }
+
+        .dropdown a:hover {
+            background-color: var(--crema);
+            color: var(--verde);
+            padding-left: 28px;
+        }
+
+        .nav-btn {
+            background-color: var(--verde);
+            color: var(--sage) !important;
+            padding: 10px 24px !important;
+            letter-spacing: 2px;
+            transition: background-color 0.3s !important;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--verde-claro) !important;
+            color: white !important;
+        }
+
+        .galeria-header {
+            background-color: var(--verde);
+            padding: 48px 60px;
+            text-align: center;
+        }
+
+        .galeria-header p {
+            font-size: 0.72rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: rgba(200,201,168,0.7);
+            margin-bottom: 12px;
+        }
+
+        .galeria-header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            color: var(--sage);
+            font-weight: 300;
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+
+        .galeria-header .header-sub {
+            font-size: 0.88rem;
+            color: rgba(200,201,168,0.6);
+            font-weight: 300;
+            max-width: 480px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        .galeria-section {
+            padding: 64px 60px 80px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .mosaico {
+            columns: 3;
+            column-gap: 20px;
+        }
+
+        .mosaico-item {
+            break-inside: avoid;
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(45,74,62,0.06);
+            cursor: pointer;
+            transition: transform 0.4s, box-shadow 0.4s;
+        }
+
+        .mosaico-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(45,74,62,0.12);
+        }
+
+        .mosaico-imagen {
+            width: 100%;
+            display: block;
+            object-fit: cover;
+            transition: transform 0.6s;
+        }
+
+        .mosaico-item:hover .mosaico-imagen { transform: scale(1.04); }
+
+        .mosaico-placeholder {
+            width: 100%;
+            background: var(--verde);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            opacity: 0.7;
+        }
+
+        .mosaico-body {
+            padding: 20px;
+            background: var(--blanco);
+        }
+
+        .mosaico-titulo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            color: var(--verde);
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .mosaico-descripcion {
+            font-size: 0.82rem;
+            color: var(--texto-suave);
+            line-height: 1.6;
+            font-weight: 300;
+        }
+
+        .lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .lightbox.activo { display: flex; }
+
+        .lightbox-contenido {
+            background: var(--blanco);
+            max-width: 700px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .lightbox-imagen {
+            width: 100%;
+            max-height: 480px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .lightbox-placeholder {
+            width: 100%;
+            height: 320px;
+            background: var(--verde);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            opacity: 0.7;
+        }
+
+        .lightbox-body {
+            padding: 28px 32px;
+        }
+
+        .lightbox-titulo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            color: var(--verde);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .lightbox-descripcion {
+            font-size: 0.88rem;
+            color: var(--texto-suave);
+            line-height: 1.7;
+            font-weight: 300;
+        }
+
+        .lightbox-cerrar {
+            position: absolute;
+            top: 20px;
+            right: 28px;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            line-height: 1;
+            transition: opacity 0.3s;
+        }
+
+        .lightbox-cerrar:hover { opacity: 0.6; }
+
+        .whatsapp-flotante {
+            position: fixed;
+            bottom: 32px;
+            right: 32px;
+            z-index: 998;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .whatsapp-label {
+            background: white;
+            color: var(--verde);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            letter-spacing: 0.5px;
+            opacity: 0;
+            transform: translateX(8px);
+            transition: all 0.3s;
+        }
+
+        .whatsapp-flotante:hover .whatsapp-label {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .whatsapp-btn {
+            width: 56px;
+            height: 56px;
+            background-color: #25d366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(37,211,102,0.4);
+            transition: transform 0.3s;
+        }
+
+        .whatsapp-btn:hover { transform: scale(1.1); }
+        .whatsapp-btn svg { width: 28px; height: 28px; fill: white; }
+
+        footer {
+            background-color: var(--verde);
+            color: var(--sage);
+            padding: 48px 60px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .footer-sub {
+            font-size: 0.72rem;
+            letter-spacing: 3px;
+            opacity: 0.6;
+            text-transform: uppercase;
+        }
+
+        .footer-col h4 {
+            font-size: 0.72rem;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .footer-col a {
+            display: block;
+            color: var(--sage);
+            text-decoration: none;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+            font-weight: 300;
+        }
+
+        .footer-col a:hover { opacity: 1; }
+
+        .footer-copy {
+            grid-column: 1 / -1;
+            border-top: 1px solid rgba(200,201,168,0.2);
+            padding-top: 24px;
+            font-size: 0.78rem;
+            opacity: 0.5;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="/" class="logo">
+            <span class="logo-nombre">Floratta</span>
+            <span class="logo-sub">Bake Studio</span>
+        </a>
+        <nav>
+            <div class="nav-item">
+                <a href="/" class="nav-link">Inicio</a>
+            </div>
+            <span class="nav-sep">|</span>
+            <div class="nav-item">
+                <a href="/catalogo" class="nav-link">
+                    Productos <span class="flecha">▾</span>
+                </a>
+                <div class="dropdown">
+                    <a href="/catalogo">Todos los productos</a>
+                    <a th:each="cat : ${categorias}"
+                       th:href="@{/catalogo(categoria=${cat.nombre})}"
+                       th:text="${cat.nombre}">Categoría</a>
+                </div>
+            </div>
+            <span class="nav-sep">|</span>
+            <div class="nav-item">
+                <a href="/cursos" class="nav-link">
+                    Cursos <span class="flecha">▾</span>
+                </a>
+                <div class="dropdown">
+                    <a href="/cursos">Todos los cursos</a>
+                    <a href="/cursos?categoria=Repostería básica">Repostería básica</a>
+                    <a href="/cursos?categoria=Decoración con fondant">Decoración con fondant</a>
+                    <a href="/cursos?categoria=Tortas artísticas">Tortas artísticas</a>
+                </div>
+            </div>
+            <span class="nav-sep">|</span>
+            <div class="nav-item">
+                <a href="/login" class="nav-link nav-btn">Iniciar sesión</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="galeria-header">
+        <p>Nuestro portafolio</p>
+        <h1>Trabajos realizados</h1>
+        <p class="header-sub">Cada creación es única. Aquí compartimos algunos de nuestros trabajos más especiales.</p>
+    </div>
+
+    <section class="galeria-section">
+        <div class="mosaico">
+
+            <div class="mosaico-item" onclick="abrirLightbox('🎂', 'Torta de bodas floral', 'Torta de tres pisos con flores de azúcar elaboradas a mano y acabado en buttercream texturizado.')">
+                <div class="mosaico-placeholder" style="height:280px">🎂</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Torta de bodas floral</h3>
+                    <p class="mosaico-descripcion">Torta de tres pisos con flores de azúcar elaboradas a mano y acabado en buttercream texturizado.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('🌸', 'Cupcakes temáticos', 'Set de 24 cupcakes personalizados para celebración de quinceañera con decoración en tonos rosados.')">
+                <div class="mosaico-placeholder" style="height:220px">🌸</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Cupcakes temáticos</h3>
+                    <p class="mosaico-descripcion">Set de 24 cupcakes personalizados para celebración de quinceañera con decoración en tonos rosados.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('✨', 'Torta geode de cristal', 'Diseño exclusivo con cristales comestibles de isomalt en tonos ámbar y dorado para aniversario especial.')">
+                <div class="mosaico-placeholder" style="height:260px">✨</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Torta geode de cristal</h3>
+                    <p class="mosaico-descripcion">Diseño exclusivo con cristales comestibles de isomalt en tonos ámbar y dorado para aniversario especial.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('🍰', 'Torta artística infantil', 'Diseño personalizado con personajes modelados en fondant para celebración de primer año.')">
+                <div class="mosaico-placeholder" style="height:240px">🍰</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Torta artística infantil</h3>
+                    <p class="mosaico-descripcion">Diseño personalizado con personajes modelados en fondant para celebración de primer año.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('🎨', 'Naked cake de temporada', 'Torta desnuda con frutas frescas, flores naturales y crema de mascarpone para celebración íntima.')">
+                <div class="mosaico-placeholder" style="height:300px">🎨</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Naked cake de temporada</h3>
+                    <p class="mosaico-descripcion">Torta desnuda con frutas frescas, flores naturales y crema de mascarpone para celebración íntima.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('🌿', 'Mesa de postres', 'Montaje completo con macarons, cake pops, mini tortas y decoración temática para evento corporativo.')">
+                <div class="mosaico-placeholder" style="height:220px">🌿</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Mesa de postres</h3>
+                    <p class="mosaico-descripcion">Montaje completo con macarons, cake pops, mini tortas y decoración temática para evento corporativo.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('🎀', 'Torta de grado', 'Torta personalizada con topper dorado y detalles en fondant para celebración de grado universitario.')">
+                <div class="mosaico-placeholder" style="height:260px">🎀</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Torta de grado</h3>
+                    <p class="mosaico-descripcion">Torta personalizada con topper dorado y detalles en fondant para celebración de grado universitario.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('🍫', 'Drip cake de chocolate', 'Torta con efecto drip en chocolate belga, decorada con galletas, macarons y frutas frescas.')">
+                <div class="mosaico-placeholder" style="height:240px">🍫</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Drip cake de chocolate</h3>
+                    <p class="mosaico-descripcion">Torta con efecto drip en chocolate belga, decorada con galletas, macarons y frutas frescas.</p>
+                </div>
+            </div>
+
+            <div class="mosaico-item" onclick="abrirLightbox('🌺', 'Torta floral minimalista', 'Diseño clean cake con flores prensadas naturales y paleta de colores neutros sobre buttercream liso.')">
+                <div class="mosaico-placeholder" style="height:280px">🌺</div>
+                <div class="mosaico-body">
+                    <h3 class="mosaico-titulo">Torta floral minimalista</h3>
+                    <p class="mosaico-descripcion">Diseño clean cake con flores prensadas naturales y paleta de colores neutros sobre buttercream liso.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <div class="lightbox" id="lightbox" onclick="cerrarLightbox(event)">
+        <button class="lightbox-cerrar" onclick="cerrarLightbox()">×</button>
+        <div class="lightbox-contenido">
+            <div class="lightbox-placeholder" id="lightboxIcono"></div>
+            <div class="lightbox-body">
+                <h2 class="lightbox-titulo" id="lightboxTitulo"></h2>
+                <p class="lightbox-descripcion" id="lightboxDescripcion"></p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div>
+            <div class="footer-logo">Floratta</div>
+            <div class="footer-sub">Bake Studio</div>
+        </div>
+        <div class="footer-col">
+            <h4>Navegación</h4>
+            <a href="/">Inicio</a>
+            <a href="/catalogo">Productos</a>
+            <a href="/cursos">Cursos</a>
+            <a href="/galeria">Galería</a>
+            <a href="/login">Iniciar sesión</a>
+        </div>
+        <div class="footer-col">
+            <h4>Contacto</h4>
+            <a href="https://wa.me/573194122610">WhatsApp</a>
+            <a href="#">Instagram</a>
+            <a href="#">Medellín, Colombia</a>
+        </div>
+        <div class="footer-copy">
+            © 2025 Floratta Bake Studio · Todos los derechos reservados
+        </div>
+    </footer>
+
+    <a href="https://wa.me/573194122610?text=Hola%20Floratta!%20Me%20gustar%C3%ADa%20hacer%20un%20pedido%20🎂"
+       target="_blank"
+       class="whatsapp-flotante">
+        <span class="whatsapp-label">Escríbenos</span>
+        <div class="whatsapp-btn">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+        </div>
+    </a>
+
+    <script>
+        function abrirLightbox(icono, titulo, descripcion) {
+            document.getElementById('lightboxIcono').textContent = icono;
+            document.getElementById('lightboxTitulo').textContent = titulo;
+            document.getElementById('lightboxDescripcion').textContent = descripcion;
+            document.getElementById('lightbox').classList.add('activo');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function cerrarLightbox(event) {
+            if (!event || event.target === document.getElementById('lightbox') || event.target.classList.contains('lightbox-cerrar')) {
+                document.getElementById('lightbox').classList.remove('activo');
+                document.body.style.overflow = '';
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') cerrarLightbox();
+        });
+    </script>
+
+</body>
+</html>

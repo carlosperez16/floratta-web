@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago y Factura · Floratta Bake Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --verde: #2d4a3e; --verde-claro: #3d6b5a; --sage: #c8c9a8;
+            --crema: #f5f2ec; --blanco: #fdfcf9; --texto: #2a2a2a; --texto-suave: #6b7c75;
+        }
+        body { font-family: 'Jost', sans-serif; background-color: var(--crema); color: var(--texto); min-height: 100vh; }
+
+        header { background-color: var(--verde); padding: 0 60px; height: 72px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { text-decoration: none; display: flex; flex-direction: column; }
+        .logo-nombre { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--sage); letter-spacing: 4px; text-transform: uppercase; line-height: 1; }
+        .logo-sub { font-size: 0.65rem; color: rgba(200,201,168,0.5); letter-spacing: 3px; text-transform: uppercase; font-family: 'Cormorant Garamond', serif; }
+        .header-paso { font-size: 0.72rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(200,201,168,0.6); }
+
+        .pasos-bar { background: var(--blanco); border-bottom: 1px solid rgba(45,74,62,0.1); padding: 20px 60px; display: flex; align-items: center; gap: 0; }
+        .paso { display: flex; align-items: center; gap: 10px; }
+        .paso-num { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 500; }
+        .paso.completo .paso-num { background: var(--sage); color: var(--verde); }
+        .paso.activo .paso-num { background: var(--verde); color: var(--sage); }
+        .paso-label { font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; }
+        .paso.completo .paso-label { color: var(--texto-suave); }
+        .paso.activo .paso-label { color: var(--verde); font-weight: 500; }
+        .paso-linea { flex: 1; height: 1px; background: rgba(45,74,62,0.15); margin: 0 20px; }
+
+        .page-content { max-width: 900px; margin: 40px auto; padding: 0 40px 80px; }
+
+        .confirmacion-banner {
+            background: var(--verde); color: var(--sage);
+            padding: 40px; text-align: center; margin-bottom: 32px;
+        }
+        .confirmacion-icono { font-size: 3rem; margin-bottom: 16px; }
+        .confirmacion-titulo { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; font-style: italic; margin-bottom: 8px; }
+        .confirmacion-sub { font-size: 0.85rem; opacity: 0.7; letter-spacing: 0.5px; }
+        .pedido-num { font-size: 1.1rem; font-weight: 500; margin-top: 12px; color: var(--sage); }
+
+        .estado-pago-box {
+            background: var(--blanco); border: 1px solid rgba(45,74,62,0.08);
+            padding: 28px 32px; margin-bottom: 24px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+        }
+        .estado-label { font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 8px; }
+        .estado-valor { font-size: 1rem; font-weight: 500; color: var(--verde); display: flex; align-items: center; gap: 8px; }
+        .estado-badge { padding: 4px 14px; font-size: 0.7rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
+        .badge-pendiente { background: #fef9e7; color: #9a7d0a; border: 1px solid #f9e79f; }
+        .badge-pagado { background: #e8f8f5; color: #1a7a5e; border: 1px solid #a9dfce; }
+
+        .factura-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+
+        .info-card { background: var(--blanco); border: 1px solid rgba(45,74,62,0.08); padding: 24px; }
+        .info-card-titulo { font-size: 0.68rem; letter-spacing: 3px; text-transform: uppercase; color: var(--texto-suave); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid rgba(45,74,62,0.08); }
+        .info-fila { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 12px; }
+        .info-fila:last-child { margin-bottom: 0; }
+        .info-clave { font-size: 0.75rem; color: var(--texto-suave); flex-shrink: 0; }
+        .info-valor { font-size: 0.82rem; color: var(--texto); font-weight: 500; text-align: right; }
+
+        .items-card { background: var(--blanco); border: 1px solid rgba(45,74,62,0.08); margin-bottom: 24px; }
+        .items-card-header { padding: 20px 24px; border-bottom: 1px solid rgba(45,74,62,0.08); }
+        .items-card-titulo { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--verde); font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; }
+        th { padding: 10px 20px; text-align: left; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 2px; color: var(--texto-suave); font-weight: 500; background-color: var(--crema); border-bottom: 1px solid rgba(45,74,62,0.08); }
+        td { padding: 14px 20px; border-bottom: 1px solid rgba(45,74,62,0.06); font-size: 0.85rem; }
+        tr:last-child td { border-bottom: none; }
+        .items-totales { padding: 16px 24px; border-top: 1px solid rgba(45,74,62,0.08); }
+        .total-fila { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--texto-suave); margin-bottom: 6px; }
+        .total-fila.principal { font-size: 1rem; color: var(--verde); font-weight: 500; padding-top: 10px; border-top: 1px solid rgba(45,74,62,0.1); margin-top: 6px; }
+        .total-fila.principal span:last-child { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; }
+
+        .instrucciones-box { background: var(--blanco); border: 1px solid rgba(45,74,62,0.08); border-left: 3px solid var(--sage); padding: 24px 28px; margin-bottom: 24px; display: none; }
+        .instrucciones-box.visible { display: block; }
+        .instrucciones-titulo { font-size: 0.82rem; font-weight: 500; color: var(--verde); margin-bottom: 12px; letter-spacing: 0.5px; }
+        .instrucciones-lista { font-size: 0.82rem; color: var(--texto-suave); line-height: 2; }
+        .instrucciones-lista strong { color: var(--verde); }
+
+        .acciones-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+        .btn { padding: 14px 28px; border: none; font-family: 'Jost', sans-serif; font-size: 0.78rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primario { background-color: var(--verde); color: var(--sage); }
+        .btn-primario:hover { background-color: var(--verde-claro); color: white; }
+        .btn-secundario { background-color: transparent; color: var(--verde); border: 1px solid rgba(45,74,62,0.3); }
+        .btn-secundario:hover { border-color: var(--verde); background-color: var(--crema); }
+        .btn-whatsapp { background-color: #25d366; color: white; }
+        .btn-whatsapp:hover { background-color: #20b558; }
+
+        .nota-final { text-align: center; font-size: 0.78rem; color: var(--texto-suave); line-height: 1.8; padding: 24px; background: var(--blanco); border: 1px solid rgba(45,74,62,0.08); }
+
+        @media (max-width: 700px) {
+            .factura-layout { grid-template-columns: 1fr; }
+            header { padding: 0 20px; }
+            .pasos-bar { padding: 16px 20px; }
+            .page-content { padding: 0 20px 60px; }
+            .acciones-row { flex-direction: column; }
+            .btn { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/" class="logo">
+        <span class="logo-nombre">Floratta</span>
+        <span class="logo-sub">Bake Studio</span>
+    </a>
+    <span class="header-paso">Paso 2 de 2 — Confirmacion y factura</span>
+</header>
+
+<div class="pasos-bar">
+    <div class="paso completo">
+        <div class="paso-num">✓</div>
+        <div class="paso-label">Datos y pago</div>
+    </div>
+    <div class="paso-linea"></div>
+    <div class="paso activo">
+        <div class="paso-num">2</div>
+        <div class="paso-label">Confirmacion y factura</div>
+    </div>
+</div>
+
+<div class="page-content">
+
+    <div class="confirmacion-banner">
+        <div class="confirmacion-icono">🎂</div>
+        <div class="confirmacion-titulo">Pedido recibido</div>
+        <div class="confirmacion-sub">Gracias por tu compra en Floratta Bake Studio</div>
+        <div class="pedido-num" id="pedido-num">Pedido #—</div>
+    </div>
+
+    <div class="estado-pago-box">
+        <div>
+            <div class="estado-label">Estado del pago</div>
+            <div class="estado-valor">
+                <span class="estado-badge" id="badge-estado">Pendiente</span>
+                <span id="texto-estado">Esperando confirmacion de pago</span>
+            </div>
+        </div>
+        <div>
+            <div class="estado-label">Metodo de pago</div>
+            <div class="estado-valor" id="metodo-pago-texto">—</div>
+        </div>
+        <div>
+            <div class="estado-label">Fecha</div>
+            <div class="estado-valor" id="fecha-pedido">—</div>
+        </div>
+    </div>
+
+    <div class="instrucciones-box" id="instrucciones-transferencia">
+        <div class="instrucciones-titulo">Instrucciones para completar tu pago</div>
+        <div class="instrucciones-lista">
+            Realiza tu transferencia a:<br>
+            Nequi / Daviplata: <strong>3194122610</strong><br>
+            Bancolombia cuenta ahorros: <strong>123-456789-00</strong><br>
+            A nombre de: <strong>Floratta Bake Studio</strong><br>
+            Monto exacto: <strong id="monto-transferencia">$0</strong><br><br>
+            Envia el comprobante por WhatsApp al <strong>3194122610</strong> indicando tu numero de pedido.
+        </div>
+    </div>
+
+    <div class="factura-layout">
+        <div class="info-card">
+            <div class="info-card-titulo">Datos del cliente</div>
+            <div class="info-fila"><span class="info-clave">Nombre</span><span class="info-valor" id="f-nombre">—</span></div>
+            <div class="info-fila"><span class="info-clave">Telefono</span><span class="info-valor" id="f-telefono">—</span></div>
+            <div class="info-fila"><span class="info-clave">Correo</span><span class="info-valor" id="f-correo">—</span></div>
+            <div class="info-fila"><span class="info-clave">Documento</span><span class="info-valor" id="f-documento">—</span></div>
+        </div>
+        <div class="info-card">
+            <div class="info-card-titulo">Direccion de envio</div>
+            <div class="info-fila"><span class="info-clave">Direccion</span><span class="info-valor" id="f-direccion">—</span></div>
+            <div class="info-fila"><span class="info-clave">Fact.</span><span class="info-valor" id="f-dir-fact">—</span></div>
+            <div class="info-fila"><span class="info-clave">Notas</span><span class="info-valor" id="f-notas">—</span></div>
+        </div>
+    </div>
+
+    <div class="items-card">
+        <div class="items-card-header">
+            <div class="items-card-titulo">Detalle del pedido</div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Precio unit.</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-items"></tbody>
+        </table>
+        <div class="items-totales">
+            <div class="total-fila"><span>Subtotal</span><span id="f-subtotal">$0</span></div>
+            <div class="total-fila"><span>Envio</span><span>A coordinar</span></div>
+            <div class="total-fila principal"><span>Total</span><span id="f-total">$0</span></div>
+        </div>
+    </div>
+
+    <div class="acciones-row">
+        <button class="btn btn-primario" onclick="descargarFacturaPDF()">
+            ↓ Descargar factura PDF
+        </button>
+        <a href="https://wa.me/573194122610" target="_blank" class="btn btn-whatsapp">
+            WhatsApp · Coordinar entrega
+        </a>
+        <a href="/catalogo" class="btn btn-secundario">
+            Seguir comprando
+        </a>
+    </div>
+
+    <div class="nota-final">
+        Recibirás un correo de confirmación en breve.<br>
+        Para cualquier consulta escríbenos al <strong>3194122610</strong> o a <strong>floratta.bakestudio@gmail.com</strong>
+    </div>
+
+</div>
+
+<script th:inline="none">
+/*<![CDATA[*/
+var token = localStorage.getItem('token');
+if (!token) { window.location.href = '/login'; }
+
+var factura = null;
+try { factura = JSON.parse(localStorage.getItem('floratta_factura')); } catch(e) {}
+
+if (!factura) {
+    window.location.href = '/catalogo';
+}
+
+function formatCOP(v) { return '$' + new Intl.NumberFormat('es-CO').format(v || 0); }
+
+function formatFecha(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function nombreMetodo(m) {
+    if (m === 'efectivo') return 'Pago en efectivo';
+    if (m === 'transferencia') return 'Transferencia bancaria';
+    if (m === 'tarjeta') return 'Tarjeta de credito/debito';
+    return m;
+}
+
+function renderizarPagina() {
+    document.getElementById('pedido-num').textContent = 'Pedido #' + factura.pedidoId;
+
+    var badge = document.getElementById('badge-estado');
+    if (factura.metodoPago === 'efectivo') {
+        badge.textContent = 'Pendiente';
+        badge.className = 'estado-badge badge-pendiente';
+        document.getElementById('texto-estado').textContent = 'Pago contra entrega';
+    } else if (factura.metodoPago === 'transferencia') {
+        badge.textContent = 'Pendiente verificacion';
+        badge.className = 'estado-badge badge-pendiente';
+        document.getElementById('texto-estado').textContent = 'Esperando comprobante de pago';
+        document.getElementById('instrucciones-transferencia').classList.add('visible');
+        document.getElementById('monto-transferencia').textContent = formatCOP(factura.total);
+    }
+
+    document.getElementById('metodo-pago-texto').textContent = nombreMetodo(factura.metodoPago);
+    document.getElementById('fecha-pedido').textContent = formatFecha(factura.fecha);
+
+    document.getElementById('f-nombre').textContent    = factura.nombre || '-';
+    document.getElementById('f-telefono').textContent  = factura.telefono || '-';
+    document.getElementById('f-correo').textContent    = factura.correo || '-';
+    document.getElementById('f-documento').textContent = factura.documento || 'No especificado';
+    document.getElementById('f-direccion').textContent = factura.direccion || '-';
+    document.getElementById('f-dir-fact').textContent  = factura.dirFact || factura.direccion || '-';
+    document.getElementById('f-notas').textContent     = factura.notas || 'Sin notas';
+
+    var tbody = document.getElementById('tabla-items');
+    var html = '';
+    (factura.items || []).forEach(function(item) {
+        var cant      = item.cantidad || 1;
+        var precio    = parseFloat(item.precio);
+        var subtotal  = precio * cant;
+        var tipo      = item.tipo === 'CURSO' ? 'Curso' : (item.categoria || 'Producto');
+        html += '<tr>';
+        html += '<td><strong>' + item.nombre + '</strong></td>';
+        html += '<td>' + tipo + '</td>';
+        html += '<td>' + (item.tipo === 'PRODUCTO' ? cant : 1) + '</td>';
+        html += '<td>' + formatCOP(precio) + '</td>';
+        html += '<td>' + formatCOP(subtotal) + '</td>';
+        html += '</tr>';
+    });
+    tbody.innerHTML = html;
+
+    document.getElementById('f-subtotal').textContent = formatCOP(factura.subtotal);
+    document.getElementById('f-total').textContent    = formatCOP(factura.total);
+}
+
+function descargarFacturaPDF() {
+    var jsPDF = window.jspdf.jsPDF;
+    var doc   = new jsPDF();
+
+    doc.setFillColor(45, 74, 62);
+    doc.rect(0, 0, 210, 40, 'F');
+    doc.setTextColor(200, 201, 168);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FLORATTA BAKE STUDIO', 14, 16);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Medellin, Colombia · floratta.bakestudio@gmail.com · 3194122610', 14, 24);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('FACTURA / COMPROBANTE DE PEDIDO', 14, 33);
+
+    doc.setTextColor(45, 74, 62);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Pedido #' + factura.pedidoId, 14, 52);
+    doc.text('Fecha: ' + formatFecha(factura.fecha), 14, 59);
+    doc.text('Metodo de pago: ' + nombreMetodo(factura.metodoPago), 14, 66);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Datos del cliente', 14, 80);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Nombre: ' + (factura.nombre || '-'), 14, 88);
+    doc.text('Telefono: ' + (factura.telefono || '-'), 14, 94);
+    doc.text('Correo: ' + (factura.correo || '-'), 14, 100);
+    doc.text('Documento: ' + (factura.documento || 'No especificado'), 14, 106);
+    doc.text('Direccion envio: ' + (factura.direccion || '-'), 14, 112);
+    doc.text('Direccion facturacion: ' + (factura.dirFact || factura.direccion || '-'), 14, 118);
+    if (factura.notas) { doc.text('Notas: ' + factura.notas, 14, 124); }
+
+    var bodyItems = (factura.items || []).map(function(item, i) {
+        var cant     = item.tipo === 'PRODUCTO' ? (item.cantidad || 1) : 1;
+        var precio   = parseFloat(item.precio);
+        var subtotal = precio * cant;
+        var tipo     = item.tipo === 'CURSO' ? 'Curso' : (item.categoria || 'Producto');
+        return [
+            String(i + 1),
+            item.nombre,
+            tipo,
+            String(cant),
+            '$' + new Intl.NumberFormat('es-CO').format(precio),
+            '$' + new Intl.NumberFormat('es-CO').format(subtotal)
+        ];
+    });
+
+    doc.autoTable({
+        startY: factura.notas ? 132 : 126,
+        head: [['#', 'Item', 'Tipo', 'Cant.', 'Precio unit.', 'Subtotal']],
+        body: bodyItems,
+        styles: { fontSize: 9, font: 'helvetica' },
+        headStyles: { fillColor: [45, 74, 62], textColor: [200, 201, 168] },
+        alternateRowStyles: { fillColor: [245, 242, 236] },
+        columnStyles: { 0: { cellWidth: 12 }, 2: { cellWidth: 28 }, 3: { cellWidth: 16 }, 4: { cellWidth: 30 }, 5: { cellWidth: 30 } },
+        margin: { left: 14, right: 14 }
+    });
+
+    var finalY = doc.lastAutoTable.finalY + 8;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text('Subtotal:', 140, finalY);
+    doc.text('$' + new Intl.NumberFormat('es-CO').format(factura.subtotal), 196, finalY, { align: 'right' });
+    doc.text('Envio:', 140, finalY + 6);
+    doc.text('A coordinar', 196, finalY + 6, { align: 'right' });
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('TOTAL:', 140, finalY + 16);
+    doc.text('$' + new Intl.NumberFormat('es-CO').format(factura.total), 196, finalY + 16, { align: 'right' });
+
+    doc.setFillColor(45, 74, 62);
+    doc.rect(0, 278, 210, 20, 'F');
+    doc.setTextColor(200, 201, 168);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Floratta Bake Studio · Gracias por tu compra · floratta.bakestudio@gmail.com', 105, 287, { align: 'center' });
+    doc.text('Este documento es un comprobante de pedido, no una factura electronica oficial.', 105, 293, { align: 'center' });
+
+    doc.save('floratta-pedido-' + factura.pedidoId + '.pdf');
+}
+
+renderizarPagina();
+/*]]>*/
+</script>
+
+</body>
+</html>
